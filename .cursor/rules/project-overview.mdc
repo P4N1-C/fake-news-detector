@@ -1,0 +1,29 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# AI-Powered Fake News Detector Overview
+
+This project is an AI-powered system designed to detect and analyze fake news claims. The system uses a combination of LLMs, web search, and trend analysis to provide veracity assessments of news claims.
+
+## Key Components
+- Frontend: Vanilla HTML/CSS/JavaScript
+- Backend: Python with FastAPI
+- LLM: Google Gemini API
+- Database: ChromaDB for vector storage
+- Search: Google/Bing Web Search APIs
+- Trend Analysis: pytrends
+- Deployment: Vercel
+
+## Main Features
+1. News claim analysis
+2. Web search integration
+3. Trend analysis
+4. Credibility scoring
+5. User feedback system
+6. Claim history tracking
+
+For detailed technical specifications, see [tech-stack.md](mdc:tech-stack.md)
+For system workflow and design details, see [design-documentation.md](mdc:design-documentation.md)
+

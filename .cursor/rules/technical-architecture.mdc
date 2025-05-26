@@ -1,0 +1,54 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Technical Architecture
+
+## Frontend Layer
+- Vanilla HTML/CSS/JavaScript
+- Simple, lightweight UI
+- Direct API communication with backend
+- No framework dependencies
+
+## Backend Layer (FastAPI)
+- RESTful API endpoints
+- Request validation
+- Async processing support
+- API documentation (Swagger UI)
+
+## Data Processing Components
+1. **LLM Integration**
+   - Google Gemini API integration
+   - Text analysis and generation
+   - Verdict synthesis
+
+2. **Search Integration**
+   - Google Custom Search API
+   - Bing Web Search API
+   - DuckDuckGo API
+
+3. **Trend Analysis**
+   - pytrends library
+   - Google Trends data
+   - Social media metrics
+
+4. **Database (ChromaDB)**
+   - Vector storage
+   - Semantic search capabilities
+   - Claim history management
+
+## External Services
+- Google Gemini API
+- Web Search APIs
+- Google Trends
+- Vercel (Deployment)
+
+## Deployment Architecture
+- Frontend: Vercel static hosting
+- Backend: Vercel serverless functions
+- Database: ChromaDB (in-memory/disk)
+- Background tasks: Vercel Background Functions
+
+For detailed tech stack information, see [tech-stack.md](mdc:tech-stack.md)
+

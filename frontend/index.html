@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI-Powered Fake News Detector</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🔍 AI-Powered Fake News Detector</h1>
+        <p>
+          Enter a news claim below to check its authenticity using AI analysis
+        </p>
+      </header>
+
+      <main>
+        <div class="input-section">
+          <label for="claimInput">Enter the news claim to analyze:</label>
+          <textarea
+            id="claimInput"
+            placeholder="Enter the news claim you want to verify here..."
+            rows="4"
+            required
+          ></textarea>
+          <button id="analyzeBtn" type="button">🔍 Analyze Claim</button>
+        </div>
+
+        <!-- Loading indicator (initially hidden) -->
+        <div
+          id="loadingIndicator"
+          class="loading-indicator"
+          style="display: none"
+        >
+          <div class="spinner"></div>
+          <p>Analyzing claim... This may take a few moments.</p>
+        </div>
+
+        <!-- Results section -->
+        <div id="resultsSection" class="results-section" style="display: none">
+          <h2>Analysis Results</h2>
+
+          <div id="verdictContainer" class="result-item">
+            <h3>🎯 Verdict:</h3>
+            <p id="verdictText" class="verdict-text">Waiting for analysis...</p>
+          </div>
+
+          <div id="explanationContainer" class="result-item">
+            <h3>📝 Explanation:</h3>
+            <p id="explanationText" class="explanation-text">
+              Waiting for analysis...
+            </p>
+          </div>
+
+          <div id="searchResultsContainer" class="result-item">
+            <h3>🔍 Search Results Used:</h3>
+            <div id="searchResultsList" class="search-results-list">
+              <!-- Search results will be populated here -->
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <footer>
+        <p>Powered by AI and Web Search • Built for Educational Purposes</p>
+      </footer>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

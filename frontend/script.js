@@ -1,0 +1,197 @@
+/**
+ * AI-Powered Fake News Detector - Frontend JavaScript
+ * Handles user interactions and API communication
+ */
+
+// DOM elements
+const claimInput = document.getElementById("claimInput");
+const analyzeBtn = document.getElementById("analyzeBtn");
+const loadingIndicator = document.getElementById("loadingIndicator");
+const resultsSection = document.getElementById("resultsSection");
+const verdictText = document.getElementById("verdictText");
+const explanationText = document.getElementById("explanationText");
+const searchResultsList = document.getElementById("searchResultsList");
+
+// API configuration
+const API_BASE_URL = "http://127.0.0.1:8000";
+
+/**
+ * Initialize the application
+ */
+document.addEventListener("DOMContentLoaded", function () {
+  // Add event listeners
+  analyzeBtn.addEventListener("click", handleAnalyzeClaim);
+
+  // Allow Enter key to trigger analysis
+  claimInput.addEventListener("keypress", function (e) {
+    if (e.key === "Enter" && e.ctrlKey) {
+      handleAnalyzeClaim();
+    }
+  });
+
+  console.log("Fake News Detector frontend initialized");
+});
+
+/**
+ * Handle the analyze claim button click
+ */
+async function handleAnalyzeClaim() {
+  const claimText = claimInput.value.trim();
+
+  // Validate input
+  if (!claimText) {
+    alert("Please enter a news claim to analyze.");
+    claimInput.focus();
+    return;
+  }
+
+  // Show loading state
+  setLoadingState(true);
+  hideResults();
+
+  try {
+    console.log("Analyzing claim:", claimText);
+
+    // Call the backend API
+    const response = await fetch(`${API_BASE_URL}/analyze_claim`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        claim_text: claimText,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Received analysis results:", data);
+
+    // Display the results
+    displayResults(data);
+    setLoadingState(false);
+  } catch (error) {
+    console.error("Error analyzing claim:", error);
+    showError(
+      "An error occurred while analyzing the claim. Please check if the backend server is running and try again."
+    );
+    setLoadingState(false);
+  }
+}
+
+/**
+ * Display the analysis results
+ */
+function displayResults(data) {
+  // Display verdict with appropriate styling
+  verdictText.textContent = data.verdict || "Unknown";
+  verdictText.className = `verdict-text ${getVerdictClass(data.verdict)}`;
+
+  // Display explanation
+  explanationText.textContent = data.explanation || "No explanation provided.";
+
+  // Display search results
+  displaySearchResults(data.search_results || []);
+
+  // Show results section
+  showResults();
+}
+
+/**
+ * Get CSS class for verdict styling
+ */
+function getVerdictClass(verdict) {
+  if (!verdict) return "";
+
+  const verdictLower = verdict.toLowerCase();
+  if (verdictLower.includes("true")) return "verdict-true";
+  if (verdictLower.includes("false")) return "verdict-false";
+  if (verdictLower.includes("uncertain") || verdictLower.includes("needs more"))
+    return "verdict-uncertain";
+  if (verdictLower.includes("error")) return "verdict-error";
+  return "";
+}
+
+/**
+ * Display search results
+ */
+function displaySearchResults(searchResults) {
+  searchResultsList.innerHTML = "";
+
+  if (!searchResults || searchResults.length === 0) {
+    searchResultsList.innerHTML =
+      "<p class='no-results'>No search results were found for this claim.</p>";
+    return;
+  }
+
+  searchResults.forEach((result, index) => {
+    const resultDiv = document.createElement("div");
+    resultDiv.className = "search-result-item";
+
+    resultDiv.innerHTML = `
+      <div class="search-result-header">
+        <span class="search-result-number">${index + 1}.</span>
+        <h4 class="search-result-title">${escapeHtml(
+          result.title || "No title"
+        )}</h4>
+      </div>
+      <p class="search-result-snippet">${escapeHtml(
+        result.snippet || "No content available"
+      )}</p>
+    `;
+
+    searchResultsList.appendChild(resultDiv);
+  });
+}
+
+/**
+ * Escape HTML to prevent XSS
+ */
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+/**
+ * Set loading state
+ */
+function setLoadingState(isLoading) {
+  if (isLoading) {
+    loadingIndicator.style.display = "block";
+    analyzeBtn.disabled = true;
+    analyzeBtn.textContent = "🔄 Analyzing...";
+  } else {
+    loadingIndicator.style.display = "none";
+    analyzeBtn.disabled = false;
+    analyzeBtn.textContent = "🔍 Analyze Claim";
+  }
+}
+
+/**
+ * Show results section
+ */
+function showResults() {
+  resultsSection.style.display = "block";
+}
+
+/**
+ * Hide results section
+ */
+function hideResults() {
+  resultsSection.style.display = "none";
+}
+
+/**
+ * Show error message
+ */
+function showError(message) {
+  verdictText.textContent = "Error";
+  verdictText.className = "verdict-text verdict-error";
+  explanationText.textContent = message;
+  searchResultsList.innerHTML = "";
+  showResults();
+}

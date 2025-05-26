@@ -1,0 +1,49 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# System Workflow
+
+The AI-Powered Fake News Detector follows this sequential workflow:
+
+1. **User Input**
+   - User submits a news claim or query
+   - Input is validated and preprocessed
+
+2. **Claim History Check**
+   - System checks internal database for similar claims
+   - Retrieves previous verdicts and timestamps
+
+3. **Parallel Information Gathering**
+   - Web Search: Uses DuckDuckGo API to find related articles
+   - Trend Analysis: Assesses claim's current popularity
+   - Both processes run simultaneously for efficiency
+
+4. **Credibility Scoring**
+   - Evaluates trustworthiness of sources
+   - Applies custom scoring algorithm
+   - Considers multiple factors for reliability
+
+5. **Data Aggregation**
+   - Combines results from all sources
+   - Structures data for LLM processing
+   - Includes timestamps and metadata
+
+6. **LLM Processing**
+   - Analyzes aggregated data
+   - Generates final verdict
+   - Provides supporting context
+
+7. **User Feedback**
+   - Presents verdict to user
+   - Collects feedback on accuracy
+   - Updates system knowledge base
+
+8. **Database Update**
+   - Records new verdict
+   - Stores user feedback
+   - Updates claim history
+
+For detailed implementation details, refer to [design-documentation.md](mdc:design-documentation.md)
+
