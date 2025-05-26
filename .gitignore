@@ -35,6 +35,7 @@ env.bak/
 venv.bak/
 backend/venv/
 backend/env/
+.cursor
 
 # IDEs
 .vscode/
