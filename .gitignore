@@ -37,6 +37,7 @@ backend/venv/
 backend/env/
 .cursorrules
 .cursorignore
+.cursor
 # IDEs
 .vscode/
 .idea/

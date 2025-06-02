@@ -218,6 +218,65 @@ main {
   margin-top: 10px;
 }
 
+/* Search engine sections */
+.search-engine-section {
+  margin-bottom: 25px;
+  border: 1px solid #e1e8ed;
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+}
+
+.search-engine-title {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  margin: 0;
+  padding: 15px 20px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-engine-icon {
+  font-size: 1.2rem;
+}
+
+.search-engine-section .search-results-list {
+  padding: 15px;
+  margin-top: 0;
+}
+
+.search-engine-section .search-result-item {
+  border: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.search-engine-section .search-result-item:hover {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Different colors for different search engines */
+#serpApiResultsContainer .search-engine-title {
+  background: linear-gradient(135deg, #4285f4, #34a853);
+}
+
+#tavilyResultsContainer .search-engine-title {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+}
+
+#duckDuckGoResultsContainer .search-engine-title {
+  background: linear-gradient(135deg, #de5833, #ff6900);
+}
+
+.no-results-container {
+  text-align: center;
+  padding: 30px;
+  color: #666;
+}
+
 .search-result-item {
   background: white;
   border: 1px solid #e1e8ed;

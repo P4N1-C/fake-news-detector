@@ -10,7 +10,19 @@ const loadingIndicator = document.getElementById("loadingIndicator");
 const resultsSection = document.getElementById("resultsSection");
 const verdictText = document.getElementById("verdictText");
 const explanationText = document.getElementById("explanationText");
-const searchResultsList = document.getElementById("searchResultsList");
+const serpApiResultsList = document.getElementById("serpApiResultsList");
+const duckDuckGoResultsList = document.getElementById("duckDuckGoResultsList");
+const tavilyResultsList = document.getElementById("tavilyResultsList");
+const serpApiResultsContainer = document.getElementById(
+  "serpApiResultsContainer"
+);
+const duckDuckGoResultsContainer = document.getElementById(
+  "duckDuckGoResultsContainer"
+);
+const tavilyResultsContainer = document.getElementById(
+  "tavilyResultsContainer"
+);
+const noResultsContainer = document.getElementById("noResultsContainer");
 
 // API configuration
 const API_BASE_URL = "http://127.0.0.1:8000";
@@ -116,18 +128,67 @@ function getVerdictClass(verdict) {
 }
 
 /**
- * Display search results
+ * Display search results separated by source
  */
 function displaySearchResults(searchResults) {
-  searchResultsList.innerHTML = "";
+  // Clear previous results
+  serpApiResultsList.innerHTML = "";
+  duckDuckGoResultsList.innerHTML = "";
+  tavilyResultsList.innerHTML = "";
+
+  // Hide all containers initially
+  serpApiResultsContainer.style.display = "none";
+  duckDuckGoResultsContainer.style.display = "none";
+  tavilyResultsContainer.style.display = "none";
+  noResultsContainer.style.display = "none";
 
   if (!searchResults || searchResults.length === 0) {
-    searchResultsList.innerHTML =
-      "<p class='no-results'>No search results were found for this claim.</p>";
+    noResultsContainer.style.display = "block";
     return;
   }
 
-  searchResults.forEach((result, index) => {
+  console.log("All search results:", searchResults);
+
+  // Separate results by source
+  const serpApiResults = searchResults.filter(
+    (result) => result.source === "SerpAPI"
+  );
+  const duckDuckGoResults = searchResults.filter(
+    (result) => result.source === "DuckDuckGo"
+  );
+  const tavilyResults = searchResults.filter(
+    (result) => result.source === "Tavily"
+  );
+
+  console.log("Tavily results:", tavilyResults);
+
+  // Display SerpAPI results
+  if (serpApiResults.length > 0) {
+    serpApiResultsContainer.style.display = "block";
+    displayResultsInContainer(serpApiResults, serpApiResultsList);
+  }
+
+  // Display DuckDuckGo results
+  if (duckDuckGoResults.length > 0) {
+    duckDuckGoResultsContainer.style.display = "block";
+    displayResultsInContainer(duckDuckGoResults, duckDuckGoResultsList);
+  }
+
+  // Display Tavily results
+  if (tavilyResults.length > 0) {
+    console.log("Displaying Tavily results container");
+    tavilyResultsContainer.style.display = "block";
+    displayResultsInContainer(tavilyResults, tavilyResultsList);
+  } else {
+    console.log("No Tavily results to display");
+  }
+}
+
+/**
+ * Display results in a specific container
+ */
+function displayResultsInContainer(results, container) {
+  results.forEach((result, index) => {
     const resultDiv = document.createElement("div");
     resultDiv.className = "search-result-item";
 
@@ -143,7 +204,7 @@ function displaySearchResults(searchResults) {
       )}</p>
     `;
 
-    searchResultsList.appendChild(resultDiv);
+    container.appendChild(resultDiv);
   });
 }
 
@@ -192,6 +253,15 @@ function showError(message) {
   verdictText.textContent = "Error";
   verdictText.className = "verdict-text verdict-error";
   explanationText.textContent = message;
-  searchResultsList.innerHTML = "";
+
+  // Clear search results
+  serpApiResultsList.innerHTML = "";
+  duckDuckGoResultsList.innerHTML = "";
+  tavilyResultsList.innerHTML = "";
+  serpApiResultsContainer.style.display = "none";
+  duckDuckGoResultsContainer.style.display = "none";
+  tavilyResultsContainer.style.display = "none";
+  noResultsContainer.style.display = "block";
+
   showResults();
 }

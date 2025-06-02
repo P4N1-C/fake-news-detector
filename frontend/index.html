@@ -55,8 +55,49 @@
 
           <div id="searchResultsContainer" class="result-item">
             <h3>🔍 Search Results Used:</h3>
-            <div id="searchResultsList" class="search-results-list">
-              <!-- Search results will be populated here -->
+
+            <!-- SerpAPI Results Section -->
+            <div id="serpApiResultsContainer" class="search-engine-section">
+              <h4 class="search-engine-title">
+                <span class="search-engine-icon">🚀</span>
+                SerpAPI (Google Search)
+              </h4>
+              <div id="serpApiResultsList" class="search-results-list">
+                <!-- SerpAPI results will be populated here -->
+              </div>
+            </div>
+
+            <!-- Tavily Results Section -->
+            <div id="tavilyResultsContainer" class="search-engine-section">
+              <h4 class="search-engine-title">
+                <span class="search-engine-icon">🤖</span>
+                Tavily (AI Search)
+              </h4>
+              <div id="tavilyResultsList" class="search-results-list">
+                <!-- Tavily results will be populated here -->
+              </div>
+            </div>
+
+            <!-- DuckDuckGo Results Section -->
+            <div id="duckDuckGoResultsContainer" class="search-engine-section">
+              <h4 class="search-engine-title">
+                <span class="search-engine-icon">🦆</span>
+                DuckDuckGo Search
+              </h4>
+              <div id="duckDuckGoResultsList" class="search-results-list">
+                <!-- DuckDuckGo results will be populated here -->
+              </div>
+            </div>
+
+            <!-- Fallback for no results -->
+            <div
+              id="noResultsContainer"
+              class="no-results-container"
+              style="display: none"
+            >
+              <p class="no-results">
+                No search results were found for this claim.
+              </p>
             </div>
           </div>
         </div>
