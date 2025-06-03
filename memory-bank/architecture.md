@@ -2,7 +2,7 @@
 
 ## Overview
 
-The AI-Powered Fake News Detector is a complete web-based application that uses Large Language Models (LLMs) and web search to analyze news claims for authenticity. The system follows a client-server architecture with a modern web frontend and a Python FastAPI backend, featuring real-time claim analysis, vector database storage, and user feedback collection.
+The AI-Powered Fake News Detector is a complete web-based application that uses Large Language Models (LLMs) and web search to analyze news claims for authenticity. The system follows a client-server architecture with a modern web frontend and a Python FastAPI backend, featuring real-time claim analysis, vector database storage, time-dependent claim detection, and user feedback collection.
 
 ## Project Structure
 
@@ -190,10 +190,18 @@ fake-news-detector/
 **Purpose:** Database utility functions for ChromaDB operations
 **Key Features:**
 
-- Claim history checking with semantic similarity
-- Claim history updating with metadata storage
+- Claim history checking with semantic similarity and time dependency validation
+- Claim history updating with metadata storage including time dependency information
+- Cache invalidation based on time dependency duration
 - Unique ID generation using MD5 hashing
 - Error handling and logging for database operations
+
+**Key Functions:**
+
+- `check_claim_history()`: Semantic similarity search with time dependency validation
+- `update_claim_history()`: Store analysis results with time dependency metadata
+- `is_cached_data_too_old()`: Validates cached data against dependency duration
+- `generate_claim_id()`: Creates unique identifiers for claims
 
 #### `backend/llm_utils.py`
 
@@ -202,8 +210,15 @@ fake-news-detector/
 
 - Claim text refinement for better search results
 - Verdict generation with detailed explanations
+- Time dependency analysis for cache invalidation strategy
 - Google Gemini API integration with error handling
 - Response parsing and validation
+
+**Key Functions:**
+
+- `refine_claim_text()`: Optimizes claims for web search
+- `get_llm_verdict()`: Generates verdict with explanation
+- `check_time_dependency()`: Determines if claim is time-sensitive and cache duration
 
 #### `backend/search_utils.py`
 
@@ -387,15 +402,20 @@ paths:
    - Modern UI loads with glassmorphism design
    - User enters news claim in textarea
 
-2. **Claim Analysis Pipeline:**
+2. **Claim Analysis Pipeline with Feedback-Based Logic:**
 
    - Frontend sends claim to `/analyze_claim` endpoint
-   - Backend checks ChromaDB for existing analysis
-   - If not found: refines claim text using LLM
-   - Performs web search using DuckDuckGo
-   - Analyzes claim using Google Gemini LLM
-   - Stores results in ChromaDB with metadata
-   - Returns comprehensive analysis to frontend
+   - Backend first determines time dependency using LLM analysis
+   - Backend checks ChromaDB for existing analysis with **feedback-aware and time-dependency logic**:
+     - **Time Dependency Check**: If claim is time-dependent and cached data is too old, proceed with new analysis
+     - **Multiple Similar Claims**: Queries up to 5 similar claims above similarity threshold
+     - **Feedback Priority System**: inaccurate > accurate > no feedback
+     - **Inaccurate Feedback Override**: If best matching claim has "inaccurate" feedback, proceed with new analysis
+     - **Accurate Feedback**: Use cached result if best matching claim has "accurate" feedback and not too old
+     - **No Feedback**: Use cached result if no feedback exists and not too old (default behavior)
+   - If cached result used: returns stored analysis with `source: "claim_history"`
+   - If new analysis needed: refines claim text using LLM → performs web search → analyzes with Google Gemini → stores results with time dependency info
+   - Returns comprehensive analysis to frontend including time dependency information
 
 3. **Results Display:**
 
@@ -408,13 +428,15 @@ paths:
 
    - User clicks accurate/inaccurate feedback button
    - Frontend sends feedback to `/submit_feedback` endpoint
-   - Backend updates ChromaDB metadata with feedback
+   - Backend updates ChromaDB metadata with feedback and timestamp
    - System confirms feedback submission to user
+   - **Future Similar Claims**: Feedback influences future decisions for similar claims
 
-5. **Historical Claims:**
-   - Subsequent requests for same claim retrieve from database
-   - Faster response time using cached analysis
-   - Preserves original analysis integrity
+5. **Historical Claims with Feedback Intelligence:**
+   - Subsequent requests for similar claims check feedback history
+   - **Smart Caching**: Only use cached results for claims with positive feedback validation
+   - **Quality Assurance**: Re-analyze claims marked as inaccurate to improve accuracy
+   - **User Trust**: Respect user feedback to build confidence in the system
 
 ## Database Schema
 
@@ -436,10 +458,25 @@ paths:
   "refined_claim": "LLM-refined claim text",
   "search_results_count": 3,
   "source_links": [{ "title": "...", "url": "...", "source": "..." }],
-  "user_feedback": "accurate|inaccurate",
-  "feedback_timestamp": "2025-06-03T06:16:36.663705"
+  "user_feedback": "accurate|inaccurate|null",
+  "feedback_timestamp": "2025-06-03T06:16:36.663705",
+  "is_time_dependent": true,
+  "dependency_duration_days": 7
 }
 ```
+
+**Feedback-Based Logic:**
+
+- **user_feedback**: User's assessment of analysis accuracy
+  - `"accurate"`: User confirmed the analysis was correct → Use cached result for similar claims
+  - `"inaccurate"`: User marked analysis as wrong → Trigger new analysis for similar claims
+  - `null`: No feedback provided → Use cached result (default behavior)
+- **feedback_timestamp**: When feedback was submitted (ISO format)
+- **Priority System**: When multiple similar claims exist with different feedback:
+  1. **Highest Priority**: Claims with "inaccurate" feedback (to prioritize updating wrong analysis)
+  2. **Medium Priority**: Claims with "accurate" feedback
+  3. **Lowest Priority**: Claims with no feedback
+- **Smart Caching**: System respects user feedback to improve accuracy and build trust
 
 ## Security Considerations
 

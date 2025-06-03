@@ -12,8 +12,11 @@ import chromadb
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 
 from search_utils import search_web
-from llm_utils import get_llm_verdict, refine_claim_text
+from llm_utils import get_llm_verdict, refine_claim_text, check_time_dependency
 from db_utils import check_claim_history, update_claim_history, generate_claim_id
+
+# Configuration constants
+SIMILARITY_THRESHOLD = float(os.getenv("SIMILARITY_THRESHOLD", "0.8"))  # Optimized to 0.6 for better spelling mistake tolerance
 
 # Configure logging
 logging.basicConfig(
@@ -21,6 +24,8 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+logger.info(f"Configured similarity threshold: {SIMILARITY_THRESHOLD}")
 
 # Initialize ChromaDB client and collection
 def initialize_chromadb():
@@ -106,46 +111,62 @@ async def analyze_claim(request: ClaimRequest):
     try:
         logger.info(f"Received claim analysis request: {request.claim_text[:100]}...")
         
-        # Step 1: Check claim history first
-        logger.info("Checking claim history for existing analysis...")
-        historical_entry = await check_claim_history(request.claim_text, claims_collection)
+        # Step 1: Check time dependency first to determine cache strategy
+        logger.info("Analyzing time dependency of the claim...")
+        time_dependency_info = await check_time_dependency(request.claim_text)
+        is_time_dependent = time_dependency_info.get("is_time_dependent", False)
+        dependency_duration = time_dependency_info.get("dependency_duration_days", 0)
+        
+        logger.info(f"Time dependency analysis - Is time dependent: {is_time_dependent}, Duration: {dependency_duration} days")
+        
+        # Step 2: Check claim history with time dependency consideration
+        logger.info(f"Checking claim history for existing analysis with similarity threshold {SIMILARITY_THRESHOLD}...")
+        historical_entry = await check_claim_history(
+            request.claim_text, 
+            claims_collection, 
+            SIMILARITY_THRESHOLD,
+            time_dependency_info
+        )
         
         if historical_entry:
-            # Return historical data if found
-            logger.info(f"Found existing analysis in claim history - Verdict: {historical_entry['verdict']}")
+            # Return historical data if found and still valid
+            similarity_score = historical_entry.get('similarity_score', 0.0)
+            logger.info(f"Found existing analysis in claim history - Verdict: {historical_entry['verdict']}, Similarity: {similarity_score:.3f}")
             response = {
                 "received_claim": request.claim_text,
                 "verdict": historical_entry["verdict"],
                 "explanation": historical_entry["explanation"],
                 "source": "claim_history",
                 "timestamp": historical_entry["timestamp"],
-                "source_links": historical_entry.get("source_links", [])
+                "source_links": historical_entry.get("source_links", []),
+                "similarity_score": similarity_score
             }
             return response
         
-        # Step 2: No historical entry found, proceed with new analysis
-        logger.info("No historical entry found, proceeding with new analysis...")
+        # Step 3: No valid historical entry found, proceed with new analysis
+        logger.info("No valid historical entry found, proceeding with new analysis...")
         
-        # Step 3: Refine the claim text using LLM
+        # Step 4: Refine the claim text using LLM
         logger.info("Starting claim text refinement...")
         refined_claim = await refine_claim_text(request.claim_text)
         
-        # Step 4: Call web search function using refined claim as query
+        # Step 5: Call web search function using refined claim as query
         logger.info("Starting web search for claim analysis...")
         search_results = await search_web(refined_claim)
         
-        # Step 5: Call LLM verdict generation function
+        # Step 6: Call LLM verdict generation function
         logger.info("Starting LLM analysis for claim verification...")
         llm_result = await get_llm_verdict(request.claim_text, search_results)
         
-        # Step 6: Update claim history database with new analysis
+        # Step 7: Update claim history database with new analysis including time dependency info
         logger.info("Saving new analysis to claim history database...")
         update_success = await update_claim_history(
             request.claim_text, 
             llm_result["verdict"], 
             llm_result["explanation"], 
             claims_collection,
-            search_results
+            search_results,
+            time_dependency_info
         )
         
         if update_success:
@@ -163,7 +184,7 @@ async def analyze_claim(request: ClaimRequest):
             "source": "new_analysis"
         }
         
-        logger.info(f"Successfully completed claim analysis pipeline - Verdict: {llm_result['verdict']}")
+        logger.info(f"Successfully completed claim analysis pipeline - Verdict: {llm_result['verdict']}, Time dependent: {is_time_dependent}")
         return response
         
     except Exception as e:

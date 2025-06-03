@@ -187,7 +187,11 @@ function displayResults(data) {
   explanationText.textContent = data.explanation || "No explanation provided.";
 
   // Display search results
-  displaySearchResults(data.search_results || []);
+  if (data.source == "claim_history") {
+    displaySearchResults(data.source_links || []);
+  } else {
+    displaySearchResults(data.search_results || []);
+  }
 
   // Show results section
   showResults();
@@ -266,12 +270,25 @@ function displaySearchResults(searchResults) {
 }
 
 /**
+ * Truncate text to specified number of words
+ */
+function truncateWords(text, wordLimit) {
+  if (!text) return "No content available";
+  const words = text.split(/\s+/);
+  if (words.length <= wordLimit) return text;
+  return words.slice(0, wordLimit).join(" ") + "...";
+}
+
+/**
  * Display results in a specific container
  */
 function displayResultsInContainer(results, container) {
   results.forEach((result, index) => {
+    console.log("Search result:", result); // Debug log to see result structure
+
     const resultDiv = document.createElement("div");
     resultDiv.className = "search-result-item";
+    resultDiv.style.cursor = "pointer";
 
     resultDiv.innerHTML = `
       <div class="search-result-header">
@@ -281,9 +298,19 @@ function displayResultsInContainer(results, container) {
         )}</h4>
       </div>
       <p class="search-result-snippet">${escapeHtml(
-        result.snippet || "No content available"
+        truncateWords(result.snippet, 50)
       )}</p>
     `;
+
+    if (result.url) {
+      console.log("Adding click handler for URL:", result.url);
+      resultDiv.addEventListener("click", () => {
+        console.log("Clicked result, opening URL:", result.url);
+        window.open(result.url, "_blank");
+      });
+    } else {
+      console.log("No link found for result:", result);
+    }
 
     container.appendChild(resultDiv);
   });

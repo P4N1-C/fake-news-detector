@@ -38,6 +38,11 @@ class VerdictResponse(BaseModel):
     explanation: str
 
 
+class TimeDependencyResponse(BaseModel):
+    is_time_dependent: bool
+    dependency_duration_days: int
+
+
 async def refine_claim_text(claim_text: str) -> str:
     """
     Refine the claim text using LLM to make it more suitable for web search
@@ -198,4 +203,96 @@ Return your response as JSON with "verdict" and "explanation" fields."""
         return {
             "verdict": "Error",
             "explanation": f"Analysis failed due to technical error: {str(e)}"
+        }
+
+async def check_time_dependency(claim_text: str) -> dict:
+    """
+    Check if a claim is time-dependent and determine its dependency duration
+    
+    Args:
+        claim_text (str): The news claim to analyze for time dependency
+    
+    Returns:
+        dict: Dictionary containing 'is_time_dependent' and 'dependency_duration_days'
+    """
+    try:
+        logger.info(f"Checking time dependency for claim: {claim_text[:100]}...")
+        
+        # Check if API key is configured
+        if not api_key:
+            logger.error("Google API key not configured")
+            return {
+                "is_time_dependent": False,
+                "dependency_duration_days": 0
+            }
+        
+        # Construct prompt for time dependency analysis
+        prompt = f"""You are an expert fact-checker analyzing news claims for time dependency. Analyze the following claim to determine if its truthfulness depends on current or recent events that change over time.
+
+CLAIM TO ANALYZE:
+"{claim_text}"
+
+INSTRUCTIONS:
+
+1. Determine if this claim is time-dependent by checking if it relates to:
+   - Current events (politics, breaking news, ongoing situations)
+   - Stock prices, market conditions, or financial data
+   - Weather or environmental conditions
+   - Sports scores, rankings, or current competitions
+   - Real-time statistics or data
+   - Ongoing conflicts, elections, or political situations
+   - Current policies, laws, or regulations that change frequently
+   - Social media trends or viral content
+   - Technology updates, software versions, or product releases
+
+2. If the claim is time-dependent, estimate how many days the information remains relevant:
+   - Breaking news, stock prices, weather: 1-3 days
+   - Political developments, ongoing events: 7-14 days
+   - Sports seasons, quarterly reports: 30-90 days
+   - Annual statistics, yearly reports: 180-365 days
+
+3. If the claim is NOT time-dependent, it includes:
+   - Historical facts and events
+   - Scientific principles and laws
+   - Biographical information
+   - Geographic facts
+   - Mathematical or logical statements
+   - Established scientific discoveries
+
+Return your response as JSON with "is_time_dependent" (boolean) and "dependency_duration_days" (integer) fields only."""
+
+        # Initialize Gemini model and send prompt
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        logger.info("Sending time dependency analysis prompt to Gemini API...")
+        response = model.generate_content(
+            prompt,
+            generation_config={"response_mime_type": "application/json"}
+        )
+        
+        if not response or not response.text:
+            logger.error("Empty or invalid response from Gemini API for time dependency check")
+            return {
+                "is_time_dependent": False,
+                "dependency_duration_days": 0
+            }
+        
+        logger.info("Received time dependency response from Gemini API, parsing JSON results...")
+        
+        # Parse JSON response using Pydantic model
+        response_data = json.loads(response.text)
+        time_dependency_response = TimeDependencyResponse(**response_data)
+        
+        logger.info(f"Time dependency analysis completed - Is time dependent: {time_dependency_response.is_time_dependent}, Duration: {time_dependency_response.dependency_duration_days} days")
+        
+        return {
+            "is_time_dependent": time_dependency_response.is_time_dependent,
+            "dependency_duration_days": time_dependency_response.dependency_duration_days
+        }
+        
+    except Exception as e:
+        logger.error(f"Error during time dependency analysis: {str(e)}")
+        return {
+            "is_time_dependent": False,
+            "dependency_duration_days": 0
         } 
