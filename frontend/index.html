@@ -100,6 +100,35 @@
               </p>
             </div>
           </div>
+
+          <!-- Feedback section (initially hidden) -->
+          <div
+            id="feedbackSection"
+            class="feedback-section"
+            style="display: none"
+          >
+            <h3>📝 How accurate was this analysis?</h3>
+            <p class="feedback-prompt">
+              Your feedback helps improve our system:
+            </p>
+            <div class="feedback-buttons">
+              <button
+                id="accurateBtn"
+                class="feedback-btn feedback-accurate"
+                type="button"
+              >
+                ✔️ Accurate
+              </button>
+              <button
+                id="inaccurateBtn"
+                class="feedback-btn feedback-inaccurate"
+                type="button"
+              >
+                ❌ Inaccurate
+              </button>
+            </div>
+            <p id="feedbackMessage" class="feedback-message"></p>
+          </div>
         </div>
       </main>
 

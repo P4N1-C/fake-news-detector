@@ -24,8 +24,17 @@ const tavilyResultsContainer = document.getElementById(
 );
 const noResultsContainer = document.getElementById("noResultsContainer");
 
+// Feedback elements
+const feedbackSection = document.getElementById("feedbackSection");
+const accurateBtn = document.getElementById("accurateBtn");
+const inaccurateBtn = document.getElementById("inaccurateBtn");
+const feedbackMessage = document.getElementById("feedbackMessage");
+
 // API configuration
 const API_BASE_URL = "http://127.0.0.1:8000";
+
+// Global variable to store current claim for feedback
+let currentClaimForFeedback = "";
 
 /**
  * Initialize the application
@@ -33,6 +42,10 @@ const API_BASE_URL = "http://127.0.0.1:8000";
 document.addEventListener("DOMContentLoaded", function () {
   // Add event listeners
   analyzeBtn.addEventListener("click", handleAnalyzeClaim);
+
+  // Add feedback event listeners
+  accurateBtn.addEventListener("click", () => handleFeedback("accurate"));
+  inaccurateBtn.addEventListener("click", () => handleFeedback("inaccurate"));
 
   // Allow Enter key to trigger analysis
   claimInput.addEventListener("keypress", function (e) {
@@ -57,9 +70,13 @@ async function handleAnalyzeClaim() {
     return;
   }
 
+  // Store claim text for feedback
+  currentClaimForFeedback = claimText;
+
   // Show loading state
   setLoadingState(true);
   hideResults();
+  hideFeedback();
 
   try {
     console.log("Analyzing claim:", claimText);
@@ -85,12 +102,76 @@ async function handleAnalyzeClaim() {
     // Display the results
     displayResults(data);
     setLoadingState(false);
+
+    // Show feedback section after successful analysis
+    showFeedback();
   } catch (error) {
     console.error("Error analyzing claim:", error);
     showError(
       "An error occurred while analyzing the claim. Please check if the backend server is running and try again."
     );
     setLoadingState(false);
+  }
+}
+
+/**
+ * Handle feedback submission
+ */
+async function handleFeedback(feedbackType) {
+  if (!currentClaimForFeedback) {
+    console.error("No claim available for feedback");
+    feedbackMessage.textContent = "Error: No claim available for feedback.";
+    feedbackMessage.className = "feedback-message feedback-error";
+    return;
+  }
+
+  // Disable feedback buttons during submission
+  accurateBtn.disabled = true;
+  inaccurateBtn.disabled = true;
+  feedbackMessage.textContent = "Submitting feedback...";
+  feedbackMessage.className = "feedback-message feedback-pending";
+
+  try {
+    console.log(
+      `Submitting ${feedbackType} feedback for claim:`,
+      currentClaimForFeedback
+    );
+
+    // Call the backend feedback API
+    const response = await fetch(`${API_BASE_URL}/submit_feedback`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        claim_text: currentClaimForFeedback,
+        feedback_type: feedbackType,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Feedback response:", data);
+
+    // Display success message
+    feedbackMessage.textContent =
+      data.message || "Feedback submitted successfully!";
+    feedbackMessage.className = "feedback-message feedback-success";
+
+    // Keep buttons disabled after successful submission
+    console.log(`Successfully submitted ${feedbackType} feedback`);
+  } catch (error) {
+    console.error("Error submitting feedback:", error);
+    feedbackMessage.textContent =
+      "Failed to submit feedback. Please try again.";
+    feedbackMessage.className = "feedback-message feedback-error";
+
+    // Re-enable buttons on error
+    accurateBtn.disabled = false;
+    inaccurateBtn.disabled = false;
   }
 }
 
@@ -244,6 +325,26 @@ function showResults() {
  */
 function hideResults() {
   resultsSection.style.display = "none";
+}
+
+/**
+ * Show feedback section
+ */
+function showFeedback() {
+  feedbackSection.style.display = "block";
+  // Clear any previous feedback message
+  feedbackMessage.textContent = "";
+  feedbackMessage.className = "feedback-message";
+  // Re-enable feedback buttons
+  accurateBtn.disabled = false;
+  inaccurateBtn.disabled = false;
+}
+
+/**
+ * Hide feedback section
+ */
+function hideFeedback() {
+  feedbackSection.style.display = "none";
 }
 
 /**

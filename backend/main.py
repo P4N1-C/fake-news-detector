@@ -13,7 +13,7 @@ from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunct
 
 from search_utils import search_web
 from llm_utils import get_llm_verdict, refine_claim_text
-from db_utils import check_claim_history, update_claim_history
+from db_utils import check_claim_history, update_claim_history, generate_claim_id
 
 # Configure logging
 logging.basicConfig(
@@ -70,6 +70,10 @@ except Exception as e:
 class ClaimRequest(BaseModel):
     claim_text: str
 
+class FeedbackRequest(BaseModel):
+    claim_text: str
+    feedback_type: str  # "accurate" or "inaccurate"
+
 # Initialize FastAPI application
 app = FastAPI(
     title="AI-Powered Fake News Detector",
@@ -114,7 +118,8 @@ async def analyze_claim(request: ClaimRequest):
                 "verdict": historical_entry["verdict"],
                 "explanation": historical_entry["explanation"],
                 "source": "claim_history",
-                "timestamp": historical_entry["timestamp"]
+                "timestamp": historical_entry["timestamp"],
+                "source_links": historical_entry.get("source_links", [])
             }
             return response
         
@@ -139,7 +144,8 @@ async def analyze_claim(request: ClaimRequest):
             request.claim_text, 
             llm_result["verdict"], 
             llm_result["explanation"], 
-            claims_collection
+            claims_collection,
+            search_results
         )
         
         if update_success:
@@ -163,6 +169,57 @@ async def analyze_claim(request: ClaimRequest):
     except Exception as e:
         logger.error(f"Error processing claim analysis: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error processing claim analysis")
+
+@app.post("/submit_feedback")
+async def submit_feedback(request: FeedbackRequest):
+    """
+    API endpoint for receiving user feedback on claim analysis accuracy
+    """
+    try:
+        logger.info(f"Received feedback - Claim: {request.claim_text[:50]}... | Feedback: {request.feedback_type}")
+        
+        # Generate the claim ID using same method as database operations
+        claim_id = generate_claim_id(request.claim_text)
+        
+        # Try to retrieve the existing entry from ChromaDB
+        if claims_collection:
+            try:
+                query_result = claims_collection.get(
+                    ids=[claim_id],
+                    include=["metadatas", "documents"]
+                )
+                
+                if query_result['ids']:
+                    # Entry found, update metadata with feedback
+                    current_metadata = query_result['metadatas'][0] if query_result['metadatas'] else {}
+                    
+                    # Add feedback to metadata
+                    from datetime import datetime
+                    current_metadata['user_feedback'] = request.feedback_type
+                    current_metadata['feedback_timestamp'] = datetime.utcnow().isoformat()
+                    
+                    # Update the entry
+                    claims_collection.update(
+                        ids=[claim_id],
+                        metadatas=[current_metadata]
+                    )
+                    
+                    logger.info(f"Successfully updated claim {claim_id} with feedback: {request.feedback_type}")
+                    return {"message": "Feedback submitted and logged successfully.", "status": "success"}
+                else:
+                    logger.warning(f"Claim not found in database for feedback: {claim_id}")
+                    return {"message": "Feedback logged but claim not found in database.", "status": "logged"}
+                    
+            except Exception as db_error:
+                logger.error(f"Database error while updating feedback: {str(db_error)}")
+                return {"message": "Feedback logged but database update failed.", "status": "error"}
+        else:
+            logger.warning("ChromaDB not available, feedback only logged to console")
+            return {"message": "Feedback logged successfully.", "status": "logged"}
+            
+    except Exception as e:
+        logger.error(f"Error processing feedback submission: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error processing feedback")
 
 if __name__ == "__main__":
     import uvicorn

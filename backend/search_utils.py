@@ -81,6 +81,7 @@ async def search_serpapi(query: str, max_results: int = 3) -> list:
                 search_result = {
                     "title": result.get("title", "No title available"),
                     "snippet": result.get("snippet", "No snippet available"),
+                    "url": result.get("link", "No URL available"),
                     "source": "SerpAPI"
                 }
                 search_results.append(search_result)
@@ -117,6 +118,7 @@ async def search_duckduckgo(query: str, max_results: int = 3) -> list:
             search_result = {
                 "title": result.get("title", "No title available"),
                 "snippet": result.get("body", "No snippet available"),
+                "url": result.get("href", "No URL available"),
                 "source": "DuckDuckGo"
             }
             search_results.append(search_result)
@@ -175,10 +177,12 @@ async def search_tavily(query: str, max_results: int = 3) -> list:
             
             title = result.get("title") or result.get("Title") or "No title available"
             content = result.get("content") or result.get("Content") or result.get("snippet") or result.get("Snippet") or "No content available"
+            url = result.get("url") or result.get("URL") or result.get("link") or "No URL available"
             
             search_result = {
                 "title": title,
                 "snippet": content,
+                "url": url,
                 "source": "Tavily"
             }
             search_results.append(search_result)
@@ -201,7 +205,7 @@ async def search_web(query: str, max_results: int = 9) -> list:
         max_results (int): Maximum number of results to return (default: 9)
     
     Returns:
-        list: List of dictionaries containing 'title', 'snippet', and 'source' for each result
+        list: List of dictionaries containing 'title', 'snippet', 'url', and 'source' for each result
     """
     try:
         logger.info(f"Starting combined web search for query: {query[:100]}...")

@@ -345,6 +345,108 @@ footer {
   font-size: 0.9rem;
 }
 
+/* Feedback section */
+.feedback-section {
+  background: linear-gradient(135deg, #f8f9ff, #e8f4fd);
+  border: 2px solid #e1e8ed;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.feedback-section h3 {
+  color: #2c3e50;
+  margin: 0 0 10px 0;
+  font-size: 1.2rem;
+}
+
+.feedback-prompt {
+  color: #666;
+  margin: 0 0 20px 0;
+  font-size: 0.95rem;
+}
+
+.feedback-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.feedback-btn {
+  padding: 12px 25px;
+  border: 2px solid transparent;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 140px;
+}
+
+.feedback-accurate {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  color: white;
+  border-color: #4caf50;
+}
+
+.feedback-accurate:hover {
+  background: linear-gradient(135deg, #45a049, #3d8b40);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.feedback-inaccurate {
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+  color: white;
+  border-color: #f44336;
+}
+
+.feedback-inaccurate:hover {
+  background: linear-gradient(135deg, #d32f2f, #c62828);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+}
+
+.feedback-btn:active {
+  transform: translateY(0);
+}
+
+.feedback-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.feedback-message {
+  margin: 10px 0 0 0;
+  font-weight: 600;
+  min-height: 20px;
+}
+
+.feedback-message.feedback-success {
+  color: #4caf50;
+}
+
+.feedback-message.feedback-error {
+  color: #f44336;
+}
+
+.feedback-message.feedback-pending {
+  color: #667eea;
+  font-style: italic;
+}
+
+.feedback-message.success {
+  color: #4caf50;
+}
+
+.feedback-message.error {
+  color: #f44336;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .container {

@@ -6,6 +6,7 @@ Contains functions for claim history management using ChromaDB
 import logging
 import hashlib
 import os
+import json
 from typing import Optional, Dict, Any
 from datetime import datetime
 
@@ -89,15 +90,27 @@ async def check_claim_history(claim_text: str, claims_collection) -> Optional[Di
             metadata = query_result["metadatas"][0] if query_result["metadatas"] else {}
             
             # Extract relevant data from metadata
+            try:
+                # Parse source_links JSON string back to list
+                source_links_str = metadata.get("source_links", "[]")
+                if source_links_str:
+                    source_links = json.loads(source_links_str)
+                else:
+                    source_links = []
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.warning(f"Error parsing source_links JSON: {str(e)}, using empty list")
+                source_links = []
+            
             stored_data = {
                 "claim_text": document,
                 "verdict": metadata.get("verdict", "Unknown"),
                 "explanation": metadata.get("explanation", "No explanation available"),
                 "timestamp": metadata.get("timestamp", "Unknown"),
+                "source_links": source_links,
                 "claim_id": claim_id
             }
             
-            logger.info(f"Found existing claim in history - Verdict: {stored_data['verdict']}, Timestamp: {stored_data['timestamp']}")
+            logger.info(f"Found existing claim in history - Verdict: {stored_data['verdict']}, Timestamp: {stored_data['timestamp']}, Source Links: {len(stored_data['source_links'])}")
             return stored_data
             
         except (IndexError, KeyError) as e:
@@ -108,7 +121,7 @@ async def check_claim_history(claim_text: str, claims_collection) -> Optional[Di
         logger.error(f"Unexpected error during claim history check for '{claim_text[:50]}...': {str(e)}")
         return None
 
-async def update_claim_history(claim_text: str, verdict: str, explanation: str, claims_collection) -> bool:
+async def update_claim_history(claim_text: str, verdict: str, explanation: str, claims_collection, search_results: list = None) -> bool:
     """
     Update claim history database with new analysis results
     
@@ -117,6 +130,7 @@ async def update_claim_history(claim_text: str, verdict: str, explanation: str, 
         verdict (str): The verdict from LLM analysis
         explanation (str): The explanation from LLM analysis
         claims_collection: ChromaDB collection instance
+        search_results (list): List of search results with source URLs (optional)
     
     Returns:
         bool: True if update was successful, False otherwise
@@ -138,7 +152,7 @@ async def update_claim_history(claim_text: str, verdict: str, explanation: str, 
         claim_id = generate_claim_id(claim_text)
         logger.info(f"Generated claim ID for history update: {claim_id}")
         
-        # Create metadata dictionary with verdict, explanation, and current UTC timestamp
+        # Create metadata dictionary with verdict, explanation, current UTC timestamp, and source links
         current_timestamp = datetime.utcnow().isoformat()
         metadata = {
             "verdict": verdict,
@@ -146,7 +160,27 @@ async def update_claim_history(claim_text: str, verdict: str, explanation: str, 
             "timestamp": current_timestamp
         }
         
-        logger.debug(f"Prepared metadata for claim {claim_id}: verdict={verdict}, timestamp={current_timestamp}")
+        # Add source links if search results are provided
+        if search_results and isinstance(search_results, list):
+            source_links = []
+            for result in search_results:
+                if isinstance(result, dict) and result.get("url") and result.get("url") != "No URL available":
+                    source_info = {
+                        "title": result.get("title", "No title"),
+                        "url": result.get("url"),
+                        "source": result.get("source", "Unknown")
+                    }
+                    source_links.append(source_info)
+            
+            if source_links:
+                metadata["source_links"] = json.dumps(source_links)
+                logger.info(f"Added {len(source_links)} source links to claim metadata")
+            else:
+                logger.info("No valid source links found in search results")
+        else:
+            logger.info("No search results provided, storing claim without source links")
+        
+        logger.debug(f"Prepared metadata for claim {claim_id}: verdict={verdict}, timestamp={current_timestamp}, source_links={len(metadata.get('source_links', []))}")
         
         # Use upsert method to add or update the claim in the collection
         try:
