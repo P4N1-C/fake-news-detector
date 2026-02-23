@@ -386,14 +386,6 @@ fake-news-detector/
 - **Monitoring:** Application performance monitoring
 - **Security:** Advanced authentication and compliance
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -406,13 +398,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **DuckDuckGo** for privacy-focused search API
 
 ---
-
-## 📞 Support
-
-For questions, issues, or contributions:
-
-- 📧 Create an issue in this repository
-- 📖 Check the documentation in `memory-bank/`
-- 🔧 Run the test suite for debugging
-
-**🎉 The MVP is complete and production-ready! Start analyzing news claims today!**
